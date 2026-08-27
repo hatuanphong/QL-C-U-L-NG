@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0074BD" />
+  <title>CLB Cầu Lông — Quản lý buổi chơi, quỹ và công nợ</title>
+  <meta name="description" content="Bản prototype quản lý CLB cầu lông: lịch tập, điểm danh, chia tiền, quỹ, công nợ và báo cáo." />
+  <style>
+    :root{
+      --blue:#0074BD;
+      --blue-700:#005f9c;
+      --blue-50:#eef8ff;
+      --orange:#EF5627;
+      --orange-50:#fff3ee;
+      --ink:#102033;
+      --muted:#65758b;
+      --line:#dce6ef;
+      --surface:#ffffff;
+      --canvas:#f6f9fc;
+      --green:#148a62;
+      --red:#d84242;
+      --shadow:0 18px 50px rgba(16,32,51,.09);
+      --shadow-sm:0 8px 22px rgba(16,32,51,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--canvas);line-height:1.55}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    a{color:inherit;text-decoration:none}
+    .container{width:min(1180px,calc(100% - 40px));margin:auto}
+    .hidden{display:none!important}
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(220,230,239,.9)}
+    .topbar .inner{height:70px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:850;letter-spacing:-.02em}
+    .brand-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,var(--blue),#1697e8);display:grid;place-items:center;color:white;box-shadow:0 8px 18px rgba(0,116,189,.24)}
+    .navlinks{display:flex;align-items:center;gap:26px;color:#4d6077;font-size:14px}
+    .navlinks a:hover{color:var(--blue)}
+    .actions{display:flex;align-items:center;gap:10px}
+    .btn{border:0;border-radius:11px;padding:11px 16px;font-weight:750;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .btn:hover{transform:translateY(-1px)}
+    .btn-primary{background:var(--blue);color:white;box-shadow:0 10px 22px rgba(0,116,189,.22)}
+    .btn-primary:hover{background:var(--blue-700)}
+    .btn-orange{background:var(--orange);color:white;box-shadow:0 10px 22px rgba(239,86,39,.2)}
+    .btn-ghost{background:white;color:var(--ink);border:1px solid var(--line)}
+    .btn-soft{background:var(--blue-50);color:var(--blue);border:1px solid #cceaff}
+    .landing{background:linear-gradient(180deg,#fff 0,#f7fbff 44%,#f6f9fc 100%)}
+    .hero{padding:88px 0 76px;display:grid;grid-template-columns:1.03fr .97fr;align-items:center;gap:64px;min-height:680px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid #cfe9fa;background:var(--blue-50);color:var(--blue);font-weight:800;font-size:12px;border-radius:999px}
+    .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--orange)}
+    h1{font-size:clamp(44px,6vw,72px);line-height:.98;letter-spacing:-.055em;margin:20px 0 22px;max-width:680px}
+    h1 span{color:var(--blue)}
+    .hero p{font-size:18px;color:var(--muted);max-width:630px;margin:0 0 28px}
+    .hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+    .micro{margin-top:16px;color:#8190a2;font-size:13px}
+    .mock-shell{position:relative;min-height:480px}
+    .mock-card{background:white;border:1px solid #e4edf4;border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+    .mock-main{position:absolute;left:0;top:34px;width:70%;padding:16px}
+    .mock-side{position:absolute;right:0;top:0;width:38%;padding:18px}
+    .mock-side.orange{top:auto;bottom:10px}
+    .mock-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .mock-title{font-weight:850;font-size:13px}
+    .pill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;background:var(--blue-50);color:var(--blue)}
+    .pill.orange{background:var(--orange-50);color:var(--orange)}
+    .row{display:grid;grid-template-columns:1.4fr .7fr .7fr;gap:10px;align-items:center;padding:11px 6px;border-top:1px solid #edf2f6;font-size:12px}
+    .avatar-name{display:flex;align-items:center;gap:8px}
+    .avatar{width:24px;height:24px;border-radius:8px;background:linear-gradient(135deg,#d9effd,#f5fbff);border:1px solid #cfe7f5}
+    .money{text-align:right;font-weight:800}
+    .money.negative{color:var(--orange)}
+    .metric-big{font-size:32px;font-weight:900;letter-spacing:-.04em;color:var(--blue)}
+    .metric-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+    .progress{height:7px;background:#edf3f8;border-radius:99px;overflow:hidden;margin-top:12px}
+    .progress>i{display:block;height:100%;width:78%;background:linear-gradient(90deg,var(--blue),#45aaf0);border-radius:99px}
+    .features{padding:88px 0;border-top:1px solid var(--line)}
+    .section-kicker{color:var(--blue);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.11em}
+    .section-title{font-size:clamp(34px,4vw,52px);line-height:1.04;letter-spacing:-.04em;margin:10px 0 14px}
+    .section-lead{max-width:720px;color:var(--muted);font-size:17px}
+    .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:38px}
+    .feature-card{background:white;border:1px solid var(--line);border-radius:16px;padding:22px;min-height:168px;transition:.2s}
+    .feature-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-sm);border-color:#c8dce9}
+    .feature-icon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--blue-50);color:var(--blue);font-weight:900;margin-bottom:15px}
+    .feature-card:nth-child(2n) .feature-icon{background:var(--orange-50);color:var(--orange)}
+    .feature-card h3{margin:0 0 7px;font-size:16px}
+    .feature-card p{margin:0;color:var(--muted);font-size:13px}
+    .system-strip{margin-top:18px;background:linear-gradient(90deg,#eef8ff,#fff5ef);border:1px solid #dbeaf4;border-radius:14px;padding:14px 18px;text-align:center;font-size:13px;font-weight:800;color:#456174}
+    .workflow{padding:95px 0}
+    .workflow-intro{text-align:center;max-width:720px;margin:0 auto 58px}
+    .workflow-row{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center;padding:58px 0;border-top:1px solid var(--line)}
+    .workflow-row.reverse .copy{order:2}
+    .workflow-row.reverse .visual{order:1}
+    .step{display:inline-flex;align-items:center;gap:8px;color:var(--blue);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+    .step b{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:var(--blue);color:white}
+    .copy h3{font-size:32px;line-height:1.08;letter-spacing:-.035em;margin:13px 0 12px}
+    .copy p{color:var(--muted);margin:0 0 16px}
+    .copy ul{padding-left:18px;color:#485c70;font-size:14px}
+    .copy li{margin:7px 0}
+    .visual{background:white;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-sm);padding:18px}
+    .visual-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .mini-table{border:1px solid #e7eef4;border-radius:12px;overflow:hidden}
+    .mini-table .r{display:grid;grid-template-columns:1.4fr .8fr .8fr;gap:8px;padding:11px 12px;border-top:1px solid #edf2f6;font-size:12px}
+    .mini-table .r:first-child{border-top:0;background:#f8fbfd;font-weight:800;color:#5f7184}
+    .status{font-weight:800;color:var(--blue)}
+    .status.orange{color:var(--orange)}
+    .bars{display:flex;align-items:flex-end;gap:12px;height:170px;padding:20px 12px 8px;border-bottom:1px solid #e8eef3}
+    .bar{flex:1;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#42a8e9,var(--blue));min-width:22px;position:relative}
+    .bar.orange{background:linear-gradient(180deg,#ff8b67,var(--orange))}
+    .bar small{position:absolute;bottom:-24px;left:50%;transform:translateX(-50%);font-size:10px;color:#78889a}
+    .end-to-end{padding:88px 0;border-top:1px solid var(--line)}
+    .timeline{margin-top:32px;border-top:1px solid var(--line)}
+    .timeline-item{display:grid;grid-template-columns:80px 210px 1fr;gap:20px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+    .timeline-item b{color:var(--blue)}
+    .timeline-item h4{margin:0 0 3px}
+    .timeline-item p{margin:0;color:var(--muted);font-size:13px}
+    .cta-band{margin:70px 0 30px;border-radius:26px;padding:62px 30px;text-align:center;background:linear-gradient(135deg,#eaf7ff,#fff5ef);border:1px solid #d7e9f4}
+    .cta-band h2{font-size:40px;line-height:1.04;letter-spacing:-.04em;margin:0 0 12px}
+    .cta-band p{color:var(--muted);margin:0 auto 20px}
+    .footer{padding:30px 0 50px;color:#8493a4;font-size:12px;display:flex;justify-content:space-between;border-top:1px solid var(--line)}
+    .workspace{min-height:100vh;background:#f3f7fb}
+    .app-shell{display:grid;grid-template-columns:245px 1fr;min-height:100vh}
+    .sidebar{position:sticky;top:0;height:100vh;background:#063c63;color:white;padding:18px 14px;display:flex;flex-direction:column}
+    .side-brand{display:flex;align-items:center;gap:10px;font-weight:900;padding:6px 8px 18px}
+    .side-brand .brand-mark{background:var(--blue)}
+    .club-switch{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 11px;margin-bottom:16px}
+    .club-switch small{color:#a9c5d8;display:block}
+    .club-switch b{font-size:13px}
+    .side-nav{display:flex;flex-direction:column;gap:4px;overflow:auto}
+    .side-nav button{width:100%;text-align:left;border:0;background:transparent;color:#d2e4f0;padding:10px 11px;border-radius:9px;font-size:13px;display:flex;gap:9px;align-items:center}
+    .side-nav button:hover,.side-nav button.active{background:white;color:#063c63;font-weight:800}
+    .nav-dot{width:7px;height:7px;border-radius:50%;background:#69b8e8}
+    .side-nav button.active .nav-dot{background:var(--orange)}
+    .side-footer{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:12px}
+    .app-main{min-width:0}
+    .app-top{height:66px;background:white;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:20}
+    .app-top .crumb{font-size:13px;color:var(--muted)}
+    .app-top .user{display:flex;align-items:center;gap:9px;font-size:13px}
+    .user-dot{width:30px;height:30px;border-radius:10px;background:var(--blue-50);color:var(--blue);display:grid;place-items:center;font-weight:900}
+    .app-content{padding:28px;max-width:1420px}
+    .page-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}
+    .page-head h2{margin:0;font-size:28px;letter-spacing:-.03em}
+    .page-head p{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .toolbar{display:flex;gap:9px;flex-wrap:wrap}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+    .stat-card{background:white;border:1px solid var(--line);border-radius:14px;padding:17px}
+    .stat-card .label{font-size:12px;color:var(--muted)}
+    .stat-card .value{font-size:25px;font-weight:900;margin-top:5px;letter-spacing:-.03em}
+    .stat-card .delta{font-size:11px;color:var(--green);margin-top:5px}
+    .stat-card.orange .value,.stat-card.orange .delta{color:var(--orange)}
+    .panel{background:white;border:1px solid var(--line);border-radius:15px;overflow:hidden;margin-bottom:18px}
+    .panel-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+    .panel-head h3{margin:0;font-size:14px}
+    .panel-body{padding:18px}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.045em;color:#78889a;text-align:left;background:#f8fbfd}
+    th,td{padding:12px 14px;border-bottom:1px solid #edf2f6;white-space:nowrap}
+    tbody tr:hover{background:#fbfdff}
+    .tag{display:inline-flex;padding:4px 8px;border-radius:999px;background:var(--blue-50);color:var(--blue);font-size:11px;font-weight:800}
+    .tag.orange{background:var(--orange-50);color:var(--orange)}
+    .tag.green{background:#edf9f5;color:var(--green)}
+    .tag.gray{background:#f1f4f7;color:#6c7b8b}
+    .search{height:38px;border:1px solid var(--line);border-radius:10px;padding:0 12px;min-width:230px;background:white;outline:none}
+    .search:focus{border-color:#78bde7;box-shadow:0 0 0 3px #e7f5fe}
+    .split{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--line);border-top:1px solid var(--line)}
+    .cal-head,.cal-day{min-height:90px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px;font-size:11px}
+    .cal-head{min-height:34px;background:#f8fbfd;color:#718193;font-weight:800;text-align:center}
+    .event{display:block;margin-top:7px;padding:5px 6px;border-radius:7px;background:var(--blue-50);color:var(--blue);font-weight:800}
+    .event.orange{background:var(--orange-50);color:var(--orange)}
+    .attendee-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .attendee{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px 11px}
+    .attendee button{border:0;border-radius:8px;padding:5px 8px;font-size:11px;font-weight:800;background:#f0f5f8;color:#667789}
+    .attendee button.yes{background:var(--blue-50);color:var(--blue)}
+    .attendee button.no{background:var(--orange-50);color:var(--orange)}
+    .config-row{display:grid;grid-template-columns:1fr 180px;gap:18px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}
+    .config-row:last-child{border-bottom:0}
+    .config-row h4{margin:0;font-size:13px}
+    .config-row p{margin:3px 0 0;color:var(--muted);font-size:12px}
+    .field{width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:white}
+    .notice{padding:12px 14px;border-radius:10px;background:#fff7f2;border:1px solid #ffd9cb;color:#9a472b;font-size:12px}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(7,27,43,.52);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+    .modal-backdrop.show{display:flex}
+    .modal{width:min(520px,100%);background:white;border-radius:17px;box-shadow:0 30px 90px rgba(0,0,0,.22);overflow:hidden}
+    .modal .panel-head{padding:18px 20px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .form-grid label{font-size:12px;color:#56677a;font-weight:700}
+    .form-grid .full{grid-column:1/-1}
+    .modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+    @media (max-width: 900px){
+      .navlinks{display:none}
+      .hero,.workflow-row,.split{grid-template-columns:1fr}
+      .hero{padding-top:60px;gap:25px}
+      .mock-shell{min-height:420px}
+      .feature-grid,.stats-grid{grid-template-columns:repeat(2,1fr)}
+      .workflow-row.reverse .copy,.workflow-row.reverse .visual{order:initial}
+      .app-shell{grid-template-columns:1fr}
+      .sidebar{position:fixed;left:-255px;z-index:80;width:245px;transition:.2s}
+      .sidebar.open{left:0}
+      .app-content{padding:18px}
+      .app-top{padding:0 18px}
+      .timeline-item{grid-template-columns:60px 1fr}
+      .timeline-item p{grid-column:2}
+    }
+    @media (max-width: 580px){
+      .container{width:min(100% - 24px,1180px)}
+      h1{font-size:44px}
+      .actions .btn-ghost{display:none}
+      .feature-grid,.stats-grid{grid-template-columns:1fr}
+      .mock-main{width:78%}.mock-side{width:48%}
+      .attendee-list{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}
+      .page-head{flex-direction:column}
+      .timeline-item{grid-template-columns:1fr}
+      .timeline-item p{grid-column:auto}
+    }
+  </style>
+</head>
+<body>
+  <section id="landing" class="landing">
+    <header class="topbar">
+      <div class="container inner">
+        <a class="brand" href="#top"><span class="brand-mark">B</span> Badminton Ops</a>
+        <nav class="navlinks">
+          <a href="#how">Cách hoạt động</a><a href="#features">Tính năng</a><a href="#flow">Quy trình</a><a href="#pricing">Bảng giá</a>
+        </nav>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="openApp('overview')">Đăng nhập demo</button>
+          <button class="btn btn-primary" onclick="openApp('overview')">Mở bản demo</button>
+        </div>
+      </div>
+    </header>
+
+    <main id="top" class="container hero">
+      <div>
+        <span class="eyebrow"><span class="dot"></span> Quản lý CLB cầu lông, không cần Excel</span>
+        <h1>Tan sân 21:00.<br><span>Chốt sổ 21:03.</span></h1>
+        <p>Lịch tập, điểm danh, chia tiền, quỹ và công nợ nằm trong một luồng duy nhất. Người quản lý nhập ít hơn, thành viên nhìn rõ hơn.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" onclick="openApp('overview')">Dùng thử giao diện</button>
+          <a class="btn btn-ghost" href="#how">Xem cách hoạt động</a>
+        </div>
+        <div class="micro">Prototype giao diện theo bộ ảnh tham chiếu • Responsive desktop/mobile</div>
+      </div>
+      <div class="mock-shell" aria-label="Mô phỏng bảng điều khiển">
+        <div class="mock-card mock-main">
+          <div class="mock-head"><div class="mock-title">Công nợ thành viên</div><span class="pill">Đã cập nhật</span></div>
+          <div class="row"><b>Thành viên</b><b>Số dư</b><b class="money">Trạng thái</b></div>
+          <div class="row"><div class="avatar-name"><span class="avatar"></span>Minh Anh</div><b>+120.000đ</b><span class="money">Dư</span></div>
+          <div class="row"><div class="avatar-name"><span class="avatar"></span>Tuấn Phong</div><b class="negative">-85.000đ</b><span class="money negative">Thiếu</span></div>
+          <div class="row"><div class="avatar-name"><span class="avatar"></span>Ngọc Mai</div><b>+40.000đ</b><span class="money">Dư</span></div>
+          <div class="row"><div class="avatar-name"><span class="avatar"></span>Đức Long</div><b class="negative">-30.000đ</b><span class="money negative">Thiếu</span></div>
+          <div class="row"><div class="avatar-name"><span class="avatar"></span>Hà My</div><b>0đ</b><span class="money">Đủ</span></div>
+        </div>
+        <div class="mock-card mock-side">
+          <div class="metric-label">Quỹ hiện tại</div><div class="metric-big">2,10tr</div>
+          <div class="progress"><i></i></div>
+          <p style="font-size:11px;color:var(--muted);margin:10px 0 0">Thu tháng này +1,26tr</p>
+        </div>
+        <div class="mock-card mock-side orange">
+          <div class="metric-label">Buổi gần nhất</div><b style="font-size:17px">Tối thứ 5 • 19:30</b>
+          <p style="font-size:11px;color:var(--muted);margin:8px 0 0">12 người • 2 sân • 3 ống cầu</p>
+          <span class="pill orange">Đã chốt</span>
+        </div>
+      </div>
+    </main>
+
+    <section id="features" class="features">
+      <div class="container">
+        <div class="section-kicker">Một nơi cho cả CLB</div>
+        <h2 class="section-title">Việc nặng nhất không nên là quản lý.</h2>
+        <p class="section-lead">Bộ giao diện gom các công việc đang rời rạc thành một hệ thống nhất quán: từ lúc tạo CLB, xếp lịch, điểm danh đến khi chia chi phí và theo dõi quỹ.</p>
+        <div class="feature-grid">
+          <article class="feature-card"><div class="feature-icon">01</div><h3>Thành viên</h3><p>Danh sách, trạng thái, số dư, ngày tham gia và thao tác nhanh.</p></article>
+          <article class="feature-card"><div class="feature-icon">02</div><h3>Lịch & buổi tập</h3><p>Lịch tháng, lịch lặp và chi tiết từng buổi chơi.</p></article>
+          <article class="feature-card"><div class="feature-icon">03</div><h3>Điểm danh / vote</h3><p>Chốt người tham gia trước giờ chơi, tránh chia sai người.</p></article>
+          <article class="feature-card"><div class="feature-icon">04</div><h3>Quỹ & ứng tiền</h3><p>Ghi thu chi, ứng trước và nguồn tiền rõ ràng theo giao dịch.</p></article>
+          <article class="feature-card"><div class="feature-icon">05</div><h3>Công nợ</h3><p>Mỗi người biết mình dư hay thiếu, quản lý không phải nhắn riêng.</p></article>
+          <article class="feature-card"><div class="feature-icon">06</div><h3>Báo cáo</h3><p>Tổng hợp chi phí sân, cầu, quỹ và xu hướng theo thời gian.</p></article>
+        </div>
+        <div class="system-strip">Lịch → Điểm danh → Chia tiền → Công nợ → Quỹ → Báo cáo</div>
+      </div>
+    </section>
+
+    <section id="how" class="workflow">
+      <div class="container">
+        <div class="workflow-intro">
+          <div class="section-kicker">Cách hoạt động</div>
+          <h2 class="section-title">Nhập một lần. Phần còn lại đi theo quy trình.</h2>
+          <p class="section-lead">Cấu trúc được rút ra từ các màn hình tham chiếu: thao tác chính luôn nằm ở đầu trang, dữ liệu ở card/table, trạng thái dùng chip và cảnh báo màu cam.</p>
+        </div>
+
+        <div class="workflow-row">
+          <div class="copy"><div class="step"><b>1</b> Khởi tạo</div><h3>Thêm CLB và cấu hình trong vài phút.</h3><p>Đặt tên CLB, thêm thành viên, sân và loại cầu. Các mục cài đặt tách riêng để người quản lý chỉ cấu hình một lần.</p><ul><li>Phân biệt quản trị viên và thành viên.</li><li>Quản lý sân, giá sân, loại cầu và đơn giá.</li><li>Thiết lập quy tắc chia tiền.</li></ul></div>
+          <div class="visual"><div class="visual-toolbar"><b>Thành viên CLB</b><button class="btn btn-primary" style="padding:8px 10px;font-size:11px">+ Thêm thành viên</button></div><div class="mini-table"><div class="r"><span>Họ tên</span><span>Vai trò</span><span>Trạng thái</span></div><div class="r"><b>Minh Anh</b><span>Admin</span><span class="status">Hoạt động</span></div><div class="r"><b>Tuấn Phong</b><span>Thành viên</span><span class="status">Hoạt động</span></div><div class="r"><b>Ngọc Mai</b><span>Thành viên</span><span class="status orange">Tạm nghỉ</span></div></div></div>
+        </div>
+
+        <div class="workflow-row reverse">
+          <div class="copy"><div class="step"><b>2</b> Lịch tập</div><h3>Khai báo lịch một lần, buổi tập sinh theo tuần.</h3><p>Lịch tháng giúp nhìn nhanh ngày nào có buổi chơi. Các lịch lặp tạo sẵn phiên tập để giảm thao tác thủ công.</p><ul><li>Lịch tuần/tháng rõ ràng.</li><li>Một buổi có thời gian, sân và ghi chú.</li><li>Dễ mở chi tiết buổi ngay từ calendar.</li></ul></div>
+          <div class="visual"><div class="visual-toolbar"><b>Tháng 08/2026</b><span class="pill">Lịch tháng</span></div><div class="calendar-grid"><div class="cal-head">T2</div><div class="cal-head">T3</div><div class="cal-head">T4</div><div class="cal-head">T5</div><div class="cal-head">T6</div><div class="cal-head">T7</div><div class="cal-head">CN</div><div class="cal-day">24</div><div class="cal-day">25</div><div class="cal-day">26<span class="event">19:30 • 2 sân</span></div><div class="cal-day">27</div><div class="cal-day">28<span class="event orange">20:00 • Vote</span></div><div class="cal-day">29</div><div class="cal-day">30</div></div></div>
+        </div>
+
+        <div class="workflow-row">
+          <div class="copy"><div class="step"><b>3</b> Buổi tập</div><h3>Điểm danh, nhập sân, cầu và khoản phát sinh.</h3><p>Chi tiết buổi là nơi tập trung dữ liệu vận hành: ai chơi, chi phí sân, số cầu dùng và các khoản cộng/trừ.</p><ul><li>Vote/điểm danh bằng thao tác một chạm.</li><li>Chi phí cấu thành minh bạch.</li><li>Có trạng thái nháp/chốt để tránh sửa nhầm.</li></ul></div>
+          <div class="visual"><div class="visual-toolbar"><b>Buổi tập 27/08 • 19:30</b><span class="pill orange">Chưa chốt</span></div><div class="attendee-list"><div class="attendee"><span>Minh Anh</span><button class="yes">Có mặt</button></div><div class="attendee"><span>Tuấn Phong</span><button class="yes">Có mặt</button></div><div class="attendee"><span>Ngọc Mai</span><button class="no">Vắng</button></div><div class="attendee"><span>Đức Long</span><button class="yes">Có mặt</button></div><div class="attendee"><span>Hà My</span><button class="yes">Có mặt</button></div><div class="attendee"><span>Quang Huy</span><button>Chưa vote</button></div></div><div class="notice" style="margin-top:12px">Tạm tính: 480.000đ • 5 người có mặt • 96.000đ/người</div></div>
+        </div>
+
+        <div class="workflow-row reverse">
+          <div class="copy"><div class="step"><b>4</b> Chia tiền</div><h3>Chiều đi khỏi sân, số tiền đã có câu trả lời.</h3><p>Hệ thống lấy danh sách có mặt và quy tắc chia để tính mỗi người phải chịu bao nhiêu. Trường hợp đặc biệt vẫn có thể cộng/trừ riêng.</p><ul><li>Chia đều hoặc theo hệ số.</li><li>Phí cố định theo thành viên.</li><li>Điều chỉnh cá nhân có lý do rõ ràng.</li></ul></div>
+          <div class="visual"><div class="visual-toolbar"><b>Phân bổ chi phí</b><span class="pill">480.000đ</span></div><div class="mini-table"><div class="r"><span>Thành viên</span><span>Hệ số</span><span>Phải trả</span></div><div class="r"><b>Minh Anh</b><span>1.0</span><b>96.000đ</b></div><div class="r"><b>Tuấn Phong</b><span>1.0</span><b>96.000đ</b></div><div class="r"><b>Đức Long</b><span>1.0</span><b>96.000đ</b></div><div class="r"><b>Hà My</b><span>0.8</span><b>76.800đ</b></div></div></div>
+        </div>
+
+        <div class="workflow-row">
+          <div class="copy"><div class="step"><b>5</b> Quỹ & báo cáo</div><h3>Hết cảnh ngồi dò tiền cuối tháng.</h3><p>Công nợ cá nhân và sổ quỹ nối trực tiếp với buổi tập. Báo cáo giúp biết tiền đi đâu và quỹ đang tăng hay giảm.</p><ul><li>Giao dịch có loại thu/chi, người tạo và ghi chú.</li><li>Đối chiếu số dư từng thành viên.</li><li>Biểu đồ chi phí theo thời gian.</li></ul></div>
+          <div class="visual"><div class="visual-toolbar"><b>Quỹ CLB</b><span class="pill">+2.100.000đ</span></div><div class="bars"><div class="bar" style="height:42%"><small>T3</small></div><div class="bar" style="height:67%"><small>T4</small></div><div class="bar orange" style="height:52%"><small>T5</small></div><div class="bar" style="height:79%"><small>T6</small></div><div class="bar" style="height:92%"><small>T7</small></div><div class="bar" style="height:74%"><small>T8</small></div></div><div style="display:flex;justify-content:space-between;margin-top:30px;font-size:12px;color:var(--muted)"><span>Thu: 6,8tr</span><span>Chi: 4,7tr</span><b style="color:var(--blue)">Còn: 2,1tr</b></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="flow" class="end-to-end">
+      <div class="container">
+        <div class="section-kicker">Một buổi tập, từ đầu đến hết</div>
+        <h2 class="section-title">Luồng thao tác ngắn và có điểm chốt.</h2>
+        <div class="timeline">
+          <div class="timeline-item"><b>18:00</b><h4>Nhắc lịch / mở vote</h4><p>Thành viên xác nhận có tham gia hay không.</p></div>
+          <div class="timeline-item"><b>19:20</b><h4>Chốt người chơi</h4><p>Quản lý nhìn nhanh số người và số sân cần dùng.</p></div>
+          <div class="timeline-item"><b>21:00</b><h4>Nhập chi phí thực tế</h4><p>Sân, cầu và các khoản phát sinh được ghi vào buổi.</p></div>
+          <div class="timeline-item"><b>21:02</b><h4>Chia tiền tự động</h4><p>Áp dụng quy tắc chia cho đúng nhóm có mặt.</p></div>
+          <div class="timeline-item"><b>21:03</b><h4>Chốt buổi</h4><p>Cập nhật công nợ, quỹ và số liệu báo cáo.</p></div>
+        </div>
+        <div id="pricing" class="cta-band">
+          <h2>Sẵn sàng quản lý CLB gọn hơn?</h2>
+          <p>Bản này là prototype giao diện. Có thể nối API, database và đăng nhập thật ở bước tiếp theo.</p>
+          <button class="btn btn-orange" onclick="openApp('overview')">Mở dashboard demo</button>
+        </div>
+        <footer class="footer"><span>© 2026 Badminton Ops prototype</span><span>White • #0074BD • #EF5627</span></footer>
+      </div>
+    </section>
+  </section>
+
+  <section id="workspace" class="workspace hidden">
+    <div class="app-shell">
+      <aside id="sidebar" class="sidebar">
+        <div class="side-brand"><span class="brand-mark">B</span> Badminton Ops</div>
+        <div class="club-switch"><small>CLB đang quản lý</small><b>CLB Cầu Lông Demo ▾</b></div>
+        <nav class="side-nav" id="sideNav"></nav>
+        <div class="side-footer"><button class="btn btn-ghost" style="width:100%" onclick="closeApp()">← Về landing page</button></div>
+      </aside>
+      <div class="app-main">
+        <div class="app-top">
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn btn-ghost" style="padding:7px 10px" onclick="toggleSidebar()">☰</button>
+            <span class="crumb">CLB Cầu Lông Demo / <b id="crumbName">Tổng quan</b></span>
+          </div>
+          <div class="user"><span>Quản trị viên</span><span class="user-dot">TP</span></div>
+        </div>
+        <main id="appContent" class="app-content"></main>
+      </div>
+    </div>
+  </section>
+
+  <div id="modal" class="modal-backdrop" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="panel-head"><h3 id="modalTitle">Thêm giao dịch</h3><button class="btn btn-ghost" style="padding:6px 9px" onclick="closeModal()">✕</button></div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <label>Loại<select class="field"><option>Thu</option><option>Chi</option><option>Ứng tiền</option></select></label>
+          <label>Số tiền<input class="field" value="200000"></label>
+          <label class="full">Nội dung<input class="field" value="Thu quỹ tháng 8"></label>
+          <label>Ngày<input class="field" type="date" value="2026-08-27"></label>
+          <label>Người liên quan<select class="field"><option>Minh Anh</option><option>Tuấn Phong</option><option>Ngọc Mai</option></select></label>
+        </div>
+        <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveDemo()">Lưu giao dịch</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const views = [
+      ['overview','Tổng quan'],['members','Thành viên'],['calendar','Lịch'],['sessions','Buổi tập'],
+      ['fund','Quỹ'],['advances','Quỹ tiền ứng'],['debts','Công nợ'],['reports','Báo cáo tài chính'],
+      ['courts','Sân'],['shuttles','Loại cầu'],['split','Cấu hình chia tiền'],['settings','Cài đặt']
+    ];
+    const members = [
+      ['Minh Anh','Admin','0912 345 678','+120.000đ','Hoạt động'],
+      ['Tuấn Phong','Thành viên','0988 246 135','-85.000đ','Hoạt động'],
+      ['Ngọc Mai','Thành viên','0905 421 996','+40.000đ','Tạm nghỉ'],
+      ['Đức Long','Thành viên','0937 610 208','-30.000đ','Hoạt động'],
+      ['Hà My','Thành viên','0974 561 209','0đ','Hoạt động'],
+      ['Quang Huy','Thành viên','0903 731 480','-65.000đ','Hoạt động']
+    ];
+    function moneyClass(v){ return v.includes('-') ? 'style="color:var(--orange);font-weight:850"' : 'style="color:var(--blue);font-weight:850"' }
+    function tag(s){ if(s==='Hoạt động'||s==='Đã chốt'||s==='Đã thu') return '<span class="tag green">'+s+'</span>'; if(s==='Tạm nghỉ'||s==='Chưa chốt'||s==='Còn nợ') return '<span class="tag orange">'+s+'</span>'; return '<span class="tag">'+s+'</span>' }
+    function table(headers, rows){ return '<div class="table-wrap"><table><thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
+    function stats(){return '<div class="stats-grid"><div class="stat-card"><div class="label">Quỹ hiện tại</div><div class="value">2.100.000đ</div><div class="delta">+12,5% tháng này</div></div><div class="stat-card"><div class="label">Thành viên hoạt động</div><div class="value">18</div><div class="delta">+2 thành viên</div></div><div class="stat-card orange"><div class="label">Công nợ cần thu</div><div class="value">485.000đ</div><div class="delta">4 người còn thiếu</div></div><div class="stat-card"><div class="label">Buổi tháng này</div><div class="value">8</div><div class="delta">Trung bình 11 người/buổi</div></div></div>'}
+    const pages = {
+      overview:()=> '<div class="page-head"><div><h2>Tổng quan</h2><p>Tình hình CLB hôm nay và các việc cần xử lý.</p></div><div class="toolbar"><button class="btn btn-soft" onclick="renderPage(\'calendar\')">Xem lịch</button><button class="btn btn-primary" onclick="showModal(\'Thêm giao dịch\')">+ Giao dịch</button></div></div>'+stats()+'<div class="split"><div class="panel"><div class="panel-head"><h3>Buổi gần nhất</h3><span class="tag orange">Chưa chốt</span></div><div class="panel-body"><h2 style="margin:0 0 4px">Tối thứ 5 • 19:30</h2><p style="color:var(--muted);margin-top:0">Sân A • 2 sân • 12 người dự kiến</p><div class="notice">Vote còn 2 người chưa phản hồi. Chi phí tạm tính 480.000đ.</div><div style="margin-top:14px"><button class="btn btn-primary" onclick="renderPage(\'sessions\')">Mở chi tiết buổi</button></div></div></div><div class="panel"><div class="panel-head"><h3>Công nợ nổi bật</h3><button class="btn btn-ghost" style="padding:6px 9px" onclick="renderPage(\'debts\')">Xem tất cả</button></div>'+table(['Thành viên','Số dư'],members.slice(0,4).map(m=>[m[0],'<b '+moneyClass(m[3])+'>'+m[3]+'</b>']))+'</div></div>',
+      members:()=> '<div class="page-head"><div><h2>Thành viên</h2><p>Quản lý danh sách, vai trò và trạng thái thành viên.</p></div><div class="toolbar"><input id="memberSearch" class="search" placeholder="Tìm thành viên..." oninput="filterMembers()"><button class="btn btn-primary" onclick="showModal(\'Thêm thành viên\')">+ Thêm thành viên</button></div></div><div class="panel" id="memberPanel">'+memberTable(members)+'</div>',
+      calendar:()=> '<div class="page-head"><div><h2>Lịch CLB</h2><p>Lịch tập và sự kiện trong tháng 08/2026.</p></div><div class="toolbar"><button class="btn btn-ghost">Hôm nay</button><button class="btn btn-primary">+ Tạo lịch</button></div></div><div class="panel"><div class="panel-head"><h3>Tháng 08/2026</h3><div><span class="tag">Lịch định kỳ</span> <span class="tag orange">Vote</span></div></div><div class="panel-body"><div class="calendar-grid"><div class="cal-head">T2</div><div class="cal-head">T3</div><div class="cal-head">T4</div><div class="cal-head">T5</div><div class="cal-head">T6</div><div class="cal-head">T7</div><div class="cal-head">CN</div>'+Array.from({length:35},(_,i)=>{const d=i+1;let e='';if([4,11,18,25].includes(d))e='<span class="event">19:30 • 2 sân</span>';if([7,14,21,28].includes(d))e='<span class="event orange">20:00 • Vote</span>';return '<div class="cal-day">'+d+e+'</div>'}).join('')+'</div></div></div>',
+      sessions:()=> '<div class="page-head"><div><h2>Buổi tập 27/08/2026</h2><p>Chi tiết người tham gia và chi phí thực tế của buổi chơi.</p></div><div class="toolbar"><span class="tag orange">Chưa chốt</span><button class="btn btn-orange" onclick="closeSession(this)">Chốt buổi</button></div></div><div class="split"><div class="panel"><div class="panel-head"><h3>Điểm danh / Vote</h3><span class="tag">12 thành viên</span></div><div class="panel-body"><div class="attendee-list" id="attendance">'+['Minh Anh','Tuấn Phong','Ngọc Mai','Đức Long','Hà My','Quang Huy','Khánh Linh','Hoàng Nam'].map((n,i)=>'<div class="attendee"><span>'+n+'</span><button class="'+(i===2?'no':'yes')+'" onclick="toggleAttend(this)">'+(i===2?'Vắng':'Có mặt')+'</button></div>').join('')+'</div></div></div><div><div class="panel"><div class="panel-head"><h3>Chi phí buổi</h3></div><div class="panel-body">'+table(['Khoản','Số lượng','Thành tiền'],[['Sân','2 giờ','320.000đ'],['Cầu','3 ống','150.000đ'],['Nước','1','30.000đ']])+'<div style="display:flex;justify-content:space-between;margin-top:14px"><b>Tổng</b><b style="color:var(--orange)">500.000đ</b></div></div></div><div class="panel"><div class="panel-head"><h3>Chia tiền</h3></div><div class="panel-body"><p style="margin-top:0;color:var(--muted);font-size:13px">7 người có mặt • chia đều theo cấu hình mặc định.</p><div class="metric-big" style="font-size:27px">71.429đ/người</div></div></div></div></div>',
+      fund:()=> '<div class="page-head"><div><h2>Quỹ CLB</h2><p>Sổ thu chi và số dư quỹ hiện tại.</p></div><div class="toolbar"><button class="btn btn-primary" onclick="showModal(\'Thêm giao dịch quỹ\')">+ Giao dịch</button></div></div>'+stats().replace('Công nợ cần thu','Thu tháng này').replace('485.000đ','1.260.000đ')+'<div class="panel"><div class="panel-head"><h3>Giao dịch gần đây</h3><input class="search" placeholder="Tìm giao dịch..."></div>'+table(['Ngày','Nội dung','Loại','Số tiền','Người tạo'],[['27/08/2026','Thu quỹ tháng 8',tag('Đã thu'),'<b style="color:var(--blue)">+600.000đ</b>','Minh Anh'],['26/08/2026','Mua 6 ống cầu',tag('Chi'),'<b style="color:var(--orange)">-510.000đ</b>','Tuấn Phong'],['21/08/2026','Thu tiền buổi tập',tag('Đã thu'),'<b style="color:var(--blue)">+820.000đ</b>','Minh Anh'],['18/08/2026','Thanh toán sân',tag('Chi'),'<b style="color:var(--orange)">-640.000đ</b>','Minh Anh']])+'</div>',
+      advances:()=> '<div class="page-head"><div><h2>Quỹ tiền ứng</h2><p>Theo dõi tiền thành viên ứng trước cho CLB.</p></div><button class="btn btn-primary" onclick="showModal(\'Ghi nhận tiền ứng\')">+ Tiền ứng</button></div><div class="panel">'+table(['Ngày','Người ứng','Nội dung','Số tiền','Trạng thái'],[['27/08/2026','Tuấn Phong','Thanh toán sân trước','500.000đ',tag('Còn nợ')],['18/08/2026','Minh Anh','Mua cầu','420.000đ',tag('Đã thu')]])+'</div>',
+      debts:()=> '<div class="page-head"><div><h2>Công nợ</h2><p>Đối chiếu số dư của từng thành viên sau các buổi tập và giao dịch.</p></div><button class="btn btn-orange" onclick="showModal(\'Thu công nợ\')">Thu công nợ</button></div><div class="panel">'+table(['Thành viên','Số dư','Buổi chưa thanh toán','Trạng thái','Thao tác'],members.map(m=>[m[0],'<b '+moneyClass(m[3])+'>'+m[3]+'</b>',m[3].includes('-')?'2':'0',m[3].includes('-')?tag('Còn nợ'):tag('Đã thu'),'<button class="btn btn-ghost" style="padding:6px 9px">Chi tiết</button>']))+'</div>',
+      reports:()=> '<div class="page-head"><div><h2>Báo cáo tài chính</h2><p>Tổng hợp thu, chi và cơ cấu chi phí của CLB.</p></div><div class="toolbar"><select class="field"><option>Tháng 08/2026</option></select><button class="btn btn-ghost">Xuất CSV</button></div></div>'+stats()+'<div class="split"><div class="panel"><div class="panel-head"><h3>Chi phí theo tuần</h3></div><div class="panel-body"><div class="bars"><div class="bar" style="height:42%"><small>W1</small></div><div class="bar" style="height:65%"><small>W2</small></div><div class="bar orange" style="height:78%"><small>W3</small></div><div class="bar" style="height:58%"><small>W4</small></div></div></div></div><div class="panel"><div class="panel-head"><h3>Cơ cấu chi phí</h3></div><div class="panel-body">'+table(['Hạng mục','Số tiền','Tỷ trọng'],[['Tiền sân','2.560.000đ','62%'],['Cầu','1.260.000đ','30%'],['Khác','330.000đ','8%']])+'</div></div>',
+      courts:()=> '<div class="page-head"><div><h2>Sân</h2><p>Danh mục sân thường dùng của CLB.</p></div><button class="btn btn-primary">+ Thêm sân</button></div><div class="panel">'+table(['Tên sân','Địa chỉ','Giá / giờ','Trạng thái'],[['Sân A','12 Nguyễn Trãi','80.000đ',tag('Hoạt động')],['Sân B','85 Lê Lợi','95.000đ',tag('Hoạt động')]])+'</div>',
+      shuttles:()=> '<div class="page-head"><div><h2>Loại cầu</h2><p>Quản lý loại cầu và đơn giá mặc định.</p></div><button class="btn btn-primary">+ Thêm loại cầu</button></div><div class="panel">'+table(['Tên loại','Đơn vị','Đơn giá','Trạng thái'],[['Hải Yến S70','Ống','170.000đ',tag('Hoạt động')],['Yonex AS30','Ống','620.000đ',tag('Hoạt động')]])+'</div>',
+      split:()=> '<div class="page-head"><div><h2>Cấu hình chia tiền</h2><p>Quy tắc mặc định dùng khi chốt một buổi tập.</p></div><button class="btn btn-primary" onclick="saveDemo()">Lưu cấu hình</button></div><div class="panel"><div class="panel-body"><div class="config-row"><div><h4>Kiểu chia mặc định</h4><p>Chia đều cho các thành viên có mặt.</p></div><select class="field"><option>Chia đều</option><option>Theo hệ số</option></select></div><div class="config-row"><div><h4>Phí quản lý / buổi</h4><p>Cộng vào tổng chi phí trước khi chia.</p></div><input class="field" value="0"></div><div class="config-row"><div><h4>Làm tròn</h4><p>Giúp số tiền dễ thu hơn.</p></div><select class="field"><option>1.000đ</option><option>500đ</option><option>Không làm tròn</option></select></div><div class="config-row"><div><h4>Cho phép điều chỉnh cá nhân</h4><p>Admin có thể cộng/trừ riêng có ghi chú.</p></div><select class="field"><option>Bật</option><option>Tắt</option></select></div></div></div>',
+      settings:()=> '<div class="page-head"><div><h2>Cài đặt CLB</h2><p>Thông tin chung, quyền và hành vi mặc định.</p></div><button class="btn btn-primary" onclick="saveDemo()">Lưu thay đổi</button></div><div class="split"><div class="panel"><div class="panel-head"><h3>Thông tin CLB</h3></div><div class="panel-body"><div class="form-grid"><label class="full">Tên CLB<input class="field" value="CLB Cầu Lông Demo"></label><label>Múi giờ<select class="field"><option>Asia/Ho_Chi_Minh</option></select></label><label>Tiền tệ<select class="field"><option>VND</option></select></label><label class="full">Ghi chú<input class="field" value="Chơi thứ 3, 5, 7 hàng tuần"></label></div></div></div><div class="panel"><div class="panel-head"><h3>Quyền & thông báo</h3></div><div class="panel-body"><div class="config-row" style="grid-template-columns:1fr 100px"><div><h4>Thành viên xem công nợ của mình</h4></div><select class="field"><option>Bật</option></select></div><div class="config-row" style="grid-template-columns:1fr 100px"><div><h4>Nhắc vote trước buổi tập</h4></div><select class="field"><option>Bật</option></select></div></div></div></div>'
+    };
+    function memberTable(list){return table(['Họ tên','Vai trò','Điện thoại','Số dư','Trạng thái'],list.map(m=>[m[0],m[1],m[2],'<b '+moneyClass(m[3])+'>'+m[3]+'</b>',tag(m[4])]))}
+    function buildNav(){
+      const nav=document.getElementById('sideNav');
+      nav.innerHTML=views.map(v=>'<button data-view="'+v[0]+'" onclick="renderPage(\''+v[0]+'\')"><span class="nav-dot"></span>'+v[1]+'</button>').join('');
+    }
+    function renderPage(name){
+      if(!pages[name]) name='overview';
+      document.getElementById('appContent').innerHTML=pages[name]();
+      document.getElementById('crumbName').textContent=(views.find(v=>v[0]===name)||[])[1]||'';
+      document.querySelectorAll('#sideNav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+      location.hash='app/'+name;
+      document.getElementById('sidebar').classList.remove('open');
+      window.scrollTo(0,0);
+    }
+    function openApp(view='overview'){document.getElementById('landing').classList.add('hidden');document.getElementById('workspace').classList.remove('hidden');buildNav();renderPage(view)}
+    function closeApp(){document.getElementById('workspace').classList.add('hidden');document.getElementById('landing').classList.remove('hidden');location.hash='top';window.scrollTo(0,0)}
+    function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+    function showModal(title){document.getElementById('modalTitle').textContent=title;document.getElementById('modal').classList.add('show')}
+    function closeModal(){document.getElementById('modal').classList.remove('show')}
+    function saveDemo(){closeModal();toast('Đã lưu dữ liệu demo')}
+    function toast(msg){const e=document.createElement('div');e.textContent=msg;e.style='position:fixed;right:22px;bottom:22px;background:#102033;color:white;padding:12px 16px;border-radius:10px;z-index:200;box-shadow:0 12px 30px rgba(0,0,0,.18);font-size:13px';document.body.appendChild(e);setTimeout(()=>e.remove(),2200)}
+    function toggleAttend(btn){const next=btn.textContent==='Có mặt'?'Vắng':'Có mặt';btn.textContent=next;btn.className=next==='Có mặt'?'yes':'no'}
+    function closeSession(btn){btn.textContent='Đã chốt';btn.disabled=true;btn.className='btn btn-soft';toast('Buổi tập đã được chốt và cập nhật công nợ')}
+    function filterMembers(){const q=document.getElementById('memberSearch').value.toLowerCase();document.getElementById('memberPanel').innerHTML=memberTable(members.filter(m=>m.join(' ').toLowerCase().includes(q)))}
+    window.addEventListener('load',()=>{if(location.hash.startsWith('#app/'))openApp(location.hash.split('/')[1])})
+  </script>
+</body>
+</html>
